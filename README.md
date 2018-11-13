@@ -69,4 +69,5 @@ will produce the following image:
 
 # Limitations
 1. It's just a hack and not for genreic use!
-2. No support for image, hyperlink, cross ref etc.
+2. Limited support for image: It only places the image there. There is no
+   support for hyperlink, cross ref, table etc.
