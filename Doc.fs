@@ -61,16 +61,20 @@ let writeSpan (p: Paragraph) = function
   | Literal text -> 
     p.Append(text) |> ignore
   | InlineCode code -> p.Append(code).Font("Courier New") |> ignore
+  | ImageLink(alt, link) -> ()
   | Strong spans -> ()
   | Emphasis spans -> ()
   | HyperLink (spans, text) -> ()
 
 // TODO: I don't know why for normal content, we'll need to set text style
 // at each write..
-let writeSpanNormal (p: Paragraph) = function
+let writeSpanNormal (p: Paragraph) (doc: DocX) = function
   | Literal text -> 
     p.Append(text).Font("SimSun").FontSize(10.5) |> ignore
   | InlineCode code -> p.Append(code).Font("Consolas") |> ignore
+  | ImageLink(alt, link) -> 
+    let image = doc.AddImage(link)
+    Indent(p.AppendPicture(image.CreatePicture()), 0)
   | Strong spans -> ()
   | Emphasis spans -> ()
   | HyperLink (spans, text) -> ()
@@ -96,7 +100,7 @@ let rec writeBlock (context: MarkdownContext) (document: DocX) = function
   | Paragraph spans -> 
       let p1 = document.InsertParagraph ()
       for span in spans do
-        writeSpanNormal p1 span
+        writeSpanNormal p1 document span
       context
   | ListBlock spanList ->
       let id = spanList.GetHashCode()
@@ -104,7 +108,7 @@ let rec writeBlock (context: MarkdownContext) (document: DocX) = function
         let p = document.InsertParagraph()
         Numbered(p, id)
         for s in spans do
-          writeSpanNormal p s
+          writeSpanNormal p document s
       context
   | MetaBlock (texts, meta) ->
       if meta = "提示"

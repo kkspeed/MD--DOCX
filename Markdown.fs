@@ -37,6 +37,7 @@ and MarkdownSpan =
   | Strong of MarkdownSpans
   | Emphasis of MarkdownSpans
   | HyperLink of MarkdownSpans * string
+  | ImageLink of string * string
 
 let (|StartsWith|_|) prefix input =
   let rec loop = function
@@ -60,6 +61,15 @@ let parseBracketed opening closing = function
 
 let (|Delimited|_|) delim = parseBracketed delim delim
 
+let (|Image|_|) chars =
+  match parseBracketed ['!'; '['] [']'] chars with
+  | Some((alt, rest)) ->
+    printfn "Bracketed: %A %A" alt rest
+    match parseBracketed ['('] [')'] rest with
+    | Some((link, chars)) -> Some((alt, link), chars)
+    | _ -> None
+  | _ -> None
+
 let toString x = List.map string x |> String.concat ""
 
 let rec parseSpans acc chars = seq {
@@ -82,6 +92,9 @@ let rec parseSpans acc chars = seq {
     yield! emitLiteral
     yield Emphasis(parseSpans [] body |> List.ofSeq)
     yield! parseSpans [] chars
+  | Image ((alt, link), rest) ->
+    yield ImageLink(toString alt, toString link)
+    yield! parseSpans [] rest
   | c::chars ->
       yield! parseSpans (c::acc) chars
   | [] -> yield! emitLiteral
